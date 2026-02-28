@@ -122,7 +122,7 @@ public class CreateAltProgram extends AbstractProgram{
         }
 
         session.getWidgetManager().getInstantiatedBuddy().WidgetMsg("pname", this.getCredential().getCharname());
-        session.getWidgetManager().getWidgetById(1).WidgetMsg("set", 2);
+        //session.getWidgetManager().getWidgetById(1).WidgetMsg("set", 2);
         //wdgmsg("set",2);
 
         Coord2d originalCoord = null;

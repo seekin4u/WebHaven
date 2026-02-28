@@ -50,7 +50,7 @@
         </div>
     </div>
     <Chatter v-if="programData && programData.programClass == 'tech.razikus.headlesshaven.bot.ChatterProgram'" />
-    <ChatterR v-if="programData && programData.programClass == 'tech.razikus.headlesshaven.bot.ChatterProgramN'" />
+    <ChatterR v-if="programData && programData.programClass == 'tech.razikus.headlesshaven.bot.ChatterProgramRespawn'" />
     <Visioner v-else-if="programData && programData.programClass == 'tech.razikus.headlesshaven.bot.AroundVisionProgram'" />
     <Generic v-else-if="programData"/>
 
