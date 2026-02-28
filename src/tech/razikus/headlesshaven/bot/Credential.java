@@ -42,7 +42,7 @@ public class Credential {
     public String toString() {
         return "Credential{" +
                 "username='" + username + '\'' +
-                ", password=:)'" +
+                ", password=FUCKYOMOMMA'" +
                 ", charname='" + charname + '\'' +
                 '}';
     }

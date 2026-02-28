@@ -2,6 +2,9 @@ package tech.razikus.headlesshaven;
 
 import haven.*;
 
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -20,6 +23,7 @@ public class PlayerHandler implements Connection.Callback, Runnable {
     private CopyOnWriteArrayList<ObjectChangeCallback> objectChangeCallbacks = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<PseudoWidgetErrorCallback> errorCallbacks = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<PseudoWidgetCallback> widgetCallbacks = new CopyOnWriteArrayList<>();
+    private Date currentDate = new Date();
 
 
 //    private SynchronousQueue<WebHavenState> queue = new SynchronousQueue<>();
@@ -174,7 +178,9 @@ public class PlayerHandler implements Connection.Callback, Runnable {
 
     @Override
     public void closed() {
-        System.out.println("CONNECTION IS CLOSED");
+        DateFormat format = new SimpleDateFormat( "hh:mm" );
+        String str = format.format( currentDate );
+        System.out.println("[" + str + "]CONNECTION IS CLOSED (" + connection.username + ")");
         connClosed = true;
 //        Connection.Callback.super.closed();
     }

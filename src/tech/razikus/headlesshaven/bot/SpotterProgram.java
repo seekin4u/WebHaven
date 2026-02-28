@@ -27,10 +27,12 @@ public class SpotterProgram extends AbstractProgram{
     private String sessName;
 
     private DiscordWebhook webhook;
+    public int runs = 0;
 
     @Override
     public void run() {
         this.webhook = new DiscordWebhook(getRunningArgs().get("discord_key"));
+        runs ++;
         while (!this.isShouldClose()) {
             WebHavenSessionManager manager = this.getManager();
             String username = this.getCredential().getUsername();
@@ -75,12 +77,12 @@ public class SpotterProgram extends AbstractProgram{
             ));
             this.getManager().brodcastFromProgram(this.getProgname(), new CommandTypeWrapper(
                     "message",
-                    "Sleeping for 60 seconds before finding again"
+                    "Sleeping for 60 * 15 seconds before finding again"
             ));
 
 
             try {
-                Thread.sleep(1000 * 60);
+                Thread.sleep(1000 * 60 * 35);
             } catch (InterruptedException e) {
                 setShouldClose(true);
             }
@@ -158,7 +160,7 @@ public class SpotterProgram extends AbstractProgram{
 
             counter++;
 
-            if(!found && counter > 60) {
+            if(!found && counter > 10) {
 
                 this.getManager().brodcastFromProgram(this.getProgname(), new CommandTypeWrapper(
                         "state",

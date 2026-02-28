@@ -10,11 +10,18 @@ import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ChatterProgram extends AbstractProgram{
+public class ChatterProgramN extends AbstractProgram{
+    private String progname;
+    private WebHavenSessionManager manager;
+    private Credential credential;
+    private HashMap<String, String> runningArgs;
 
-
-    public ChatterProgram(String progname, WebHavenSessionManager manager, Credential credential, HashMap<String, String> runningArgs) {
+    public ChatterProgramN(String progname, WebHavenSessionManager manager, Credential credential, HashMap<String, String> runningArgs) {
         super(progname, manager, credential, runningArgs);
+        this.progname = progname;
+        this.manager = manager;
+        this. credential = credential;
+        this.runningArgs = runningArgs;
     }
 
 
@@ -83,30 +90,43 @@ public class ChatterProgram extends AbstractProgram{
             session.getWidgetManager().addErrorCallback(new PseudoWidgetErrorCallback() {
                 @Override
                 public void onError(String message) {
-                    if(message.equals("")){
+                    if(message.equals("aa")){
                         isBanned.set(true);
                     }
                 }
             });
 
             while(!isBanned.get()){
-                session.getWidgetManager().getChatChannelByName("Area Chat").sendMessage("ВАМ БАН");
+                ChatPseudoWidget c = session.getWidgetManager().getChatChannelByName("Infected");
+                c.addErrorCallback( new ChatErrorCallback() {
+
+                    @Override
+                    public void onError(String message) {
+                        System.out.println("CHAT ON ERROR");
+                        isBanned.set(true);
+                    }
+                });
+                c.sendMessage("ВАМ БАН");
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
 
-            //создание нового персонажа на этом аккаунте
-
-            try {
-                programThread.join();
-            } catch (InterruptedException e) {
-                this.setShouldClose(true);
-            }
             this.sessName = null;
             this.getManager().getSessions().remove(sessName);
+
+            //создание нового персонажа на этом аккаунте
+            try {
+                Credential newCredentials = new Credential(credential.getUsername(), credential.getPassword(), "15");
+                runningArgs.put("BEACON_PASS", "67845622");
+                AbstractProgram pr = ProgramRegistry.instantiate("tech.razikus.headlesshaven.bot.CreateAltProgram", progname, manager, newCredentials, runningArgs);
+                manager.startProgram(pr);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            setShouldClose(true);
 
             try {
                 // WAIT 10 SECONDS BEFORE RECONNECT
@@ -134,9 +154,22 @@ public class ChatterProgram extends AbstractProgram{
         while (session.isAlive() && !this.isShouldClose()) {
             WebHavenState state = null; // Get state from queue
             try {
-                while(session.isAlive() && session.getLastState() == null && !this.isShouldClose()) {
-                    Thread.sleep(100);
+                while(session.isAlive() && session.getLastState() != null && !this.isShouldClose()) {
+                    Thread.sleep(300);
                     System.out.println("WAITING FOR FIRST STATE... ");
+                    ArrayList<PseudoWidget> locwnd = session.getWidgetManager().getWidgetsByType("lbl");
+                    if(!locwnd.isEmpty()){
+                        Object text = "The position where you last logged out is not available, because that location is claimed. Would you like to restart at your hearth fire instead?";
+                        for(PseudoWidget w : locwnd){
+                            if(w.getCargs()[0].equals(text)){
+                                PseudoWidget yesBtn = session.getWidgetManager().getWidgetButtonByLbl("Yes");
+                                if(yesBtn != null){
+                                    yesBtn.WidgetMsg("activate");
+                                    System.out.println("Clicked YES in CHANGE POSITION window");
+                                }
+                            }
+                        }
+                    }
                 }
                 state = session.getLastState();
             } catch (InterruptedException e) {

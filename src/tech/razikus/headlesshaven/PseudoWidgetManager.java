@@ -91,13 +91,29 @@ public class PseudoWidgetManager {
             }
         }
         return toRet;
-
     }
 
     public PseudoWidget getWidgetById(int id) {
         synchronized (pseudoWidgetHashMap) {
             return pseudoWidgetHashMap.get(id);
         }
+    }
+
+    //ADDED WIDGET: PseudoWidget{id=8, type='btn', parent=6, pargs=[0!woy15+c, 7], cargs=[100, Yes]} (btn)
+    public PseudoWidget getWidgetButtonByLbl(String buttonLbl){
+        PseudoWidget toRet = null;
+        synchronized (pseudoWidgetHashMap) {
+            for (Map.Entry<Integer, PseudoWidget> wg: pseudoWidgetHashMap.entrySet()) {
+                if (wg.getValue().type.equals("btn")) {
+                    PseudoWidget pwg = wg.getValue();
+                    Object lbl = buttonLbl;
+                    if(pwg.getCargs()[1].equals(lbl)){
+                        toRet = wg.getValue();
+                    }
+                }
+            }
+        }
+        return toRet;
     }
 
     public String getMyCharacter() {
@@ -143,34 +159,43 @@ public class PseudoWidgetManager {
 
 
 
-            System.out.println("ADDED WIDGET: " + toAdd);
+            System.out.println("ADDED WIDGET: " + toAdd + " (" + widget.type + ")");
             switch (widget.type) {
-                case "buddy":
+                case "buddy" -> {
                     BuddyPseudoWidget buddyPseudoWidget = new BuddyPseudoWidget(widget);
                     toAdd = buddyPseudoWidget;
                     instantiatedBuddy = buddyPseudoWidget;
-                    break;
-                case "gameui":
+                }
+                case "gameui" -> {
                     myCharacter = (String) widget.cargs[0];
                     myGOBId = (int) widget.cargs[1];
-                    break;
-                case "mchat":
+                }
+                case "mchat" -> {
                     ChatPseudoWidget chatPseudoWidget = new ChatPseudoWidget(widget, this);
                     toAdd = chatPseudoWidget;
                     synchronized (callbacks) {
-                        for (ChatCallback cb: callbacks) {
+                        for (ChatCallback cb : callbacks) {
                             chatPseudoWidget.addCallback(cb);
                         }
                         chatWidgets.put(widget.id, chatPseudoWidget);
-
                     }
-                    break;
-                case "inv":
+                }
+                case "ui/rchan:21" -> {
+                    ChatPseudoWidget rchatPseudoWidget = new ChatPseudoWidget(widget, this);
+                    toAdd = rchatPseudoWidget;
+                    synchronized (callbacks) {
+                        for (ChatCallback cb : callbacks) {
+                            rchatPseudoWidget.addCallback(cb);
+                        }
+                        chatWidgets.put(widget.id, rchatPseudoWidget);
+                    }
+                }
+                case "inv" -> {
                     PseudoInventory pseudoInventory = new PseudoInventory(widget, this);
                     toAdd = pseudoInventory;
                     inventories.put(widget.id, pseudoInventory);
-                    break;
-                case "item":
+                }
+                case "item" -> {
                     PseudoItem pseudoItem = new PseudoItem(widget, this.resourceManager);
                     toAdd = pseudoItem;
                     synchronized (items) {
@@ -178,15 +203,13 @@ public class PseudoWidgetManager {
                     }
 
                     // @todo callbacks
-                    break;
-                case "sm":
+                }
+                case "sm" -> {
                     FlowerMenuPseudoWidget flowerMenuPseudoWidget = new FlowerMenuPseudoWidget(this, widget);
                     toAdd = flowerMenuPseudoWidget;
                     flowerMenus.put(widget.id, flowerMenuPseudoWidget);
-                    break;
-                case "mapview":
-                    mapView = new MapViewPseudoWidget(widget);
-                    break;
+                }
+                case "mapview" -> mapView = new MapViewPseudoWidget(widget);
             }
             if(widget.type.startsWith("ui/music:")) {
                 PseudoMusicWidget toAddReal = new PseudoMusicWidget(widget);

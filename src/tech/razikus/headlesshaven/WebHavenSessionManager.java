@@ -1,6 +1,7 @@
 package tech.razikus.headlesshaven;
 
 import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
 import haven.Resource;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -12,9 +13,12 @@ import tech.razikus.headlesshaven.bot.*;
 import tech.razikus.headlesshaven.bot.automation.WebHavenSessionInformer;
 import tech.razikus.headlesshaven.script.GroovyScriptEngine;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +61,14 @@ public class WebHavenSessionManager {
 
     public Map<String, AbstractProgram> getPrograms() {
         return this.programs;
+    }
+    public AbstractProgram getProgram(String program) {
+        AbstractProgram ap;
+        for(Map.Entry<String, AbstractProgram> apm: getPrograms().entrySet()){
+            if(apm.getValue().equals(program)){
+                ap = apm.getValue();
+            }
+        }
     }
 
     public Set<ProgramInformation> getProgramInformations() {
@@ -193,22 +205,22 @@ public class WebHavenSessionManager {
         String initialPassword = "";
         String initialChar = "";
 
-        String initialProgram = PlayerSpotterProgram.class.getName();
+        String initialProgram = SpotterProgram.class.getName();
+        //tech.razikus.headlesshaven.bot.SpotterProgram
 
 
-
-        if(env.containsKey("HOST")) {
+        if (env.containsKey("HOST")) {
             host = env.get("HOST");
         }
-        if(env.containsKey("PORT")) {
+        if (env.containsKey("PORT")) {
             port = env.get("PORT");
         }
 
-        if(env.containsKey("INITIAL_PROGRAM")) {
+        if (env.containsKey("INITIAL_PROGRAM")) {
             initialProgram = env.get("INITIAL_PROGRAM");
         }
 
-        if(env.containsKey("AUTOLOGIN_USER")){
+        if (env.containsKey("AUTOLOGIN_USER")) {
             initialUser = env.get("AUTOLOGIN_USER");
             initialPassword = env.get("AUTOLOGIN_PASSWORD");
             initialChar = env.get("AUTOLOGIN_CHAR");
@@ -243,7 +255,7 @@ public class WebHavenSessionManager {
         app.get("/programs", ctx -> {
             engine.reloadScripts();
             Set<ClassFinder.ProgramInfoSerializable> allFromClassPath = ClassFinder.findAllSubclassesWithArgsSerializable();
-            for (Map.Entry<String, Class<? extends AbstractProgram>> w: engine.getLoadedClasses().entrySet()) {
+            for (Map.Entry<String, Class<? extends AbstractProgram>> w : engine.getLoadedClasses().entrySet()) {
                 allFromClassPath.add(new ClassFinder.ProgramInfoSerializable(w.getValue(), new HashMap<>()));
             }
             ctx.json(allFromClassPath);
@@ -273,7 +285,7 @@ public class WebHavenSessionManager {
                             String programId = command.get("program").getAsString();
 
                             AbstractProgram program = sessionManager.getPrograms().get(programId);
-                            if(program != null) {
+                            if (program != null) {
                                 program.handleInput(command);
                             } else {
                                 ctx.send("{\"error\": \"Program not found\"}");
@@ -293,12 +305,12 @@ public class WebHavenSessionManager {
                             }
                             Credential credential = new Credential(username, password, altname);
                             System.out.println(engine.getLoadedClasses());
-                            if(engine.getLoadedClasses().get(prog) != null) {
-                                System.out.println("INSTANTIATE GROOVY: " +  engine.getLoadedClasses().get(prog));
+                            if (engine.getLoadedClasses().get(prog) != null) {
+                                System.out.println("INSTANTIATE GROOVY: " + engine.getLoadedClasses().get(prog));
                                 AbstractProgram program2 = ProgramRegistry.instantiateFromClass(engine.getLoadedClasses().get(prog), programName, sessionManager, credential, argsConverted);
                                 sessionManager.startProgram(program2);
                             } else {
-                                System.out.println("INSTANTIATE NORMAL: " +  prog);
+                                System.out.println("INSTANTIATE NORMAL: " + prog);
                                 AbstractProgram program2 = ProgramRegistry.instantiate(prog, programName, sessionManager, credential, argsConverted);
                                 System.out.println(program2);
                                 sessionManager.startProgram(program2);
@@ -352,8 +364,40 @@ public class WebHavenSessionManager {
             });
         });
         System.out.println("INITIALIZATION COMPLETE");
-        if(!initialUser.isEmpty()) {
-            if(initialPassword.isEmpty() ) {
+
+        JsonArray jobss;
+        try {
+            jobss = JsonParser.parseReader(new FileReader("./creds.json")).getAsJsonArray();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        for (JsonElement pa : jobss) {
+            System.out.println(pa);
+            JsonObject credObj = pa.getAsJsonObject();
+            String username = credObj.get("username").getAsString();
+            String password = credObj.get("password").getAsString();
+            String altname = credObj.get("altname").getAsString();
+            String prog = credObj.get("program").getAsString();
+            String programName = credObj.get("programName").getAsString();
+            JsonObject argsJson = credObj.get("args").getAsJsonObject();
+            HashMap<String, String> argsConverted = new HashMap<>();
+
+            for (Map.Entry<String, JsonElement> entry : argsJson.entrySet()) {
+                argsConverted.put(entry.getKey(), entry.getValue().getAsString());
+            }
+            Credential credentials = new Credential(username, password, altname);
+            AbstractProgram program;
+            try {
+                program = ProgramRegistry.instantiate(prog, programName, sessionManager, credentials, argsConverted);
+                sessionManager.startProgram(program);
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (!initialUser.isEmpty()) {
+            if (initialPassword.isEmpty()) {
                 throw new RuntimeException("IF AUTOLOGIN_USER IS NOT EMPTY THEN AUTOLOGIN_PASSWORD AND  AUTOLOGIN_CHAR MUST BE NOT EMPTY");
             }
             try {
@@ -370,9 +414,9 @@ public class WebHavenSessionManager {
                 throw new RuntimeException(e);
             }
         } else {
-                System.out.println(
-                        "HINT: You can set AUTOLOGIN_USER, AUTOLOGIN_PASSWORD, and AUTOLOGIN_CHAR to autologin some session"
-                );
+            System.out.println(
+                    "HINT: You can set AUTOLOGIN_USER, AUTOLOGIN_PASSWORD, and AUTOLOGIN_CHAR to autologin some session"
+            );
         }
     }
 

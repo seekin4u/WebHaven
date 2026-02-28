@@ -1,0 +1,15 @@
+[
+
+  {
+    "type": "start_program",
+    "username": "username",
+    "password": "password",
+    "altname": "character_name",
+    "program": "tech.razikus.headlesshaven.bot.ChatterProgramN",
+    "programName": "chatter",
+    "args": {
+      "discord_key": "key",
+      "resource_to_spot": "gfx/kritter/caveangler/caveangler"
+    }
+  }
+]

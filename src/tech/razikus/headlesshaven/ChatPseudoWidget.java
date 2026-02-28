@@ -6,6 +6,7 @@ public class ChatPseudoWidget extends PseudoWidget{
     private String chatName = "";
     private PseudoWidgetManager manager;
     private ArrayList<ChatCallback> callbacks = new ArrayList<>();
+    private ArrayList<ChatErrorCallback> errorCallbacks = new ArrayList<>();
     public ChatPseudoWidget(PseudoWidget original, PseudoWidgetManager manager) {
         super(original);
         this.chatName = (String) original.getCargs()[0];
@@ -19,9 +20,15 @@ public class ChatPseudoWidget extends PseudoWidget{
     public void addCallback(ChatCallback callback) {
         this.callbacks.add(callback);
     }
+    public void addErrorCallback(ChatErrorCallback callback) {
+        this.errorCallbacks.add(callback);
+    }
 
     public void removeCallback(ChatCallback callback) {
         this.callbacks.remove(callback);
+    }
+    public void removeErrorCallback(ChatErrorCallback callback) {
+        this.errorCallbacks.remove(callback);
     }
 
     public boolean isAreaChat() {
@@ -59,8 +66,18 @@ public class ChatPseudoWidget extends PseudoWidget{
 
                 }
                 break;
+            case "enter":
+                break;
+            case "err":
+                System.out.println("ERR:" + message);
+                String msg = (String)message.getArgs()[0];
+                for(ChatErrorCallback ecb: errorCallbacks){
+                    ecb.onError(msg);
+                }
+                break;
             default:
                 System.out.println("UNHANDLED CHAT MESSAGE:" + message);
         }
     }
+
 }

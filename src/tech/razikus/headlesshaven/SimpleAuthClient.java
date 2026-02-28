@@ -28,7 +28,7 @@ public class SimpleAuthClient {
                 response.setUsername(what);
 
             } catch (Exception e) {
-                System.out.println(e);
+                System.out.println("haven.tryauth:" + e);
             }
 
         }, "th1");

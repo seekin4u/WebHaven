@@ -106,12 +106,24 @@ public class CreateAltProgram extends AbstractProgram{
         sendMessageProg("Starting program");
         while (!session.connectionCreated() && !this.isShouldClose()) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(300);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
             System.out.println("WAITING FOR CONNECTION... ");
         }
+
+        while(session.getWidgetManager().getChatChannelByName("Area Chat") == null){
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        session.getWidgetManager().getInstantiatedBuddy().WidgetMsg("pname", this.getCredential().getCharname());
+        session.getWidgetManager().getWidgetById(1).WidgetMsg("set", 2);
+        //wdgmsg("set",2);
 
         Coord2d originalCoord = null;
 
