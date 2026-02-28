@@ -62,13 +62,15 @@ public class WebHavenSessionManager {
     public Map<String, AbstractProgram> getPrograms() {
         return this.programs;
     }
+    
     public AbstractProgram getProgram(String program) {
-        AbstractProgram ap;
+        AbstractProgram ap = null;
         for(Map.Entry<String, AbstractProgram> apm: getPrograms().entrySet()){
             if(apm.getValue().equals(program)){
                 ap = apm.getValue();
             }
         }
+      return ap;
     }
 
     public Set<ProgramInformation> getProgramInformations() {
