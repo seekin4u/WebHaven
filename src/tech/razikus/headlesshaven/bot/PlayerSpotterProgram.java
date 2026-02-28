@@ -3,6 +3,7 @@ package tech.razikus.headlesshaven.bot;
 import tech.razikus.headlesshaven.*;
 import tech.razikus.headlesshaven.bot.automation.AutoLoginCharCallback;
 import tech.razikus.headlesshaven.bot.automation.DiscordWebhook;
+import tech.razikus.headlesshaven.bot.automation.OnCharLoggedInWaiter;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,12 +50,21 @@ public class PlayerSpotterProgram extends AbstractProgram{
                 return;
             }
 
-            session.addWidgetCallback(new AutoLoginCharCallback(altname, session));
+            OnCharLoggedInWaiter waiter = new OnCharLoggedInWaiter();
+            session.addWidgetCallback(new AutoLoginCharCallback(altname, session, waiter));
 
             Thread sessionThread = new Thread(session);
             sessionThread.start();
 
-            this.session = session;
+
+            WebHavenSession sessionWaited = waiter.waitForSession();
+            if(sessionWaited.isSessionTeleported()) {
+                sessionThread.interrupt();
+                sessionThread = new Thread(sessionWaited);
+                sessionThread.start();
+            }
+
+            this.session = sessionWaited;
             Thread programThread = new Thread(this::sessionHandler);
             programThread.start();
 
@@ -144,6 +154,7 @@ public class PlayerSpotterProgram extends AbstractProgram{
             Set<Long> alreadyProcessed = new HashSet<>();
 
             StringBuilder EQ = new StringBuilder();
+            int discordColor = 0x000000;
             for (PseudoObject obj: session.getHandler().getObjectManager().getPseudoObjectHashMap().values()) {
                 for (ResourceInformationLazyProxy proxy: obj.getResourceInformationLazyProxies()) {
                     if (proxy.getResource().getInformation().getName().equals(toFind) && obj.getId() != session.getWidgetManager().getMyGOBId()) {
@@ -169,6 +180,7 @@ public class PlayerSpotterProgram extends AbstractProgram{
                             }
                             if(obj.getBuddyState() != null && obj.getBuddyState().getBuddyState() != null) {
                                 EQ.append(" | KNOWN AS: ").append(obj.getBuddyState().getBuddyState().getName());
+                                discordColor = obj.getBuddyState().getBuddyState().getGroupColor();
                             }
                         }
                         EQ.append("\n\n");
@@ -183,7 +195,7 @@ public class PlayerSpotterProgram extends AbstractProgram{
                 DiscordWebhook.Embed embed = new DiscordWebhook.Embed()
                         .setTitle(mess)
                         .setDescription(EQ.toString())
-                        .setColor(0x00ff00);
+                        .setColor(discordColor);
 
                 this.getManager().brodcastFromProgram(this.getProgname(), new CommandTypeWrapper(
                         "message",
@@ -205,7 +217,7 @@ public class PlayerSpotterProgram extends AbstractProgram{
                 DiscordWebhook.Embed embed = new DiscordWebhook.Embed()
                         .setTitle(mess)
                         .setDescription(EQ.toString())
-                        .setColor(0x00ff00);
+                        .setColor(discordColor);
 
                 try {
                     this.webhook.sendEmbed(embed);
