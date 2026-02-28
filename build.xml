@@ -64,6 +64,23 @@
     <extlib name="jogl" path="lib/ext/jogl" url="${ext-lib-base}/jogl/current" />
   </target>
 
+    <target name="extlib/jogl-arm" depends="extlib/jogl">
+        <mkdir dir="lib/ext/jogl" />
+        <get dest="lib/ext/jogl/" verbose="true">
+            <url url="https://jogamp.org/deployment/v2.5.0/jar/jogl-all.jar" />
+            <url url="https://jogamp.org/deployment/v2.5.0/jar/jogl-all-natives-macosx-universal.jar" />
+            <url url="https://jogamp.org/deployment/v2.5.0/jar/gluegen-rt.jar" />
+            <url url="https://jogamp.org/deployment/v2.5.0/jar/gluegen-rt-natives-macosx-universal.jar" />
+        </get>
+        <mkdir dir="lib/ext/jogl/natives/macosx-universal" />
+        <unjar src="lib/ext/jogl/jogl-all-natives-macosx-universal.jar" dest="lib/ext/jogl">
+            <patternset includes="natives/**" />
+        </unjar>
+        <unjar src="lib/ext/jogl/gluegen-rt-natives-macosx-universal.jar" dest="lib/ext/jogl">
+            <patternset includes="natives/**" />
+        </unjar>
+    </target>
+
   <target name="extlib/lwjgl-base" depends="extlib-env" unless="extlib/has-lwjgl-base">
     <extlib name="lwjgl-base" path="lib/ext/lwjgl" url="${ext-lib-base}/lwjgl/current/lwjgl" />
   </target>
