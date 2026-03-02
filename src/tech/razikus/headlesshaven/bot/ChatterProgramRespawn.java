@@ -1,5 +1,6 @@
 package tech.razikus.headlesshaven.bot;
 
+import haven.Coord;
 import tech.razikus.headlesshaven.*;
 import tech.razikus.headlesshaven.bot.automation.AutoLoginCharCallback;
 import tech.razikus.headlesshaven.bot.automation.BrodcastingChatCallback;
@@ -12,6 +13,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static haven.OCache.posres;
 
 public class ChatterProgramRespawn extends AbstractProgram{
     private String progname;
@@ -195,57 +198,65 @@ public class ChatterProgramRespawn extends AbstractProgram{
 
             if(session.getWidgetManager().getMapView().isPresent()) {
                 MapViewPseudoWidget mapView = session.getWidgetManager().getMapView().get();
-                HashMap<Long, PseudoObject> objs = session.getHandler().getObjectManager().getPseudoObjectHashMapTHSafe();
-                PseudoObject milestone = null;
-                for (PseudoObject obj : objs.values()) {
+                PseudoObject milestone = ObjectFinder.findClosest(
+                        session.getHandler().getObjectManager(),
+                        "gfx/terobjs/road/milestone-stone-e"
+                );
+                if(milestone != null) {
+                    System.out.println(milestone);
+                    session.getWidgetManager().getChatChannelByName("Area Chat").sendMessage("Going to the milestone");
+                    mapView.gobClickL(milestone);
+                    session.getWidgetManager().getChatChannelByName("Area Chat").sendMessage("Activating the road");
+                    mapView.gobClickR(milestone);
+                    session.getWidgetManager().addWidgetCallback(new PseudoWidgetCallback() {
+                        private int wndId = -1;
+                        private ArrayList<PseudoWidget> travelButtons = new ArrayList<>();
 
-                    for (ResourceInformationLazyProxy prox : obj.getResourceInformationLazyProxies()) {
-                        if (prox.getResource() != null & prox.getResource().getInformation() != null) {
-                            if (prox.getResource().getInformation().getName().contains("gfx/terobjs/road/milestone-stone-e")) {
-                                milestone = obj;
-                                break;
+                        @Override
+                        public void onWidgetCreated(PseudoWidget widget) {
+                            if(widget.getType().equals("wnd") && "Milestone".equals(widget.getCargs()[1])) {
+                                wndId = widget.getId();
+                                charterWidget[0] = widget;
                             }
-                        }
-                    }
-                    if(milestone != null){
-                        System.out.println(milestone);
-                        mapView.gobClickR(milestone);
-                        session.getWidgetManager().addWidgetCallback(new PseudoWidgetCallback() {
-                            private int widgetToWatchToRemove = -1;
-                            private int wndId = -1;
 
-                            @Override
-                            public void onWidgetCreated(PseudoWidget widget) {
-                                if (widget.getType().equals("wnd") && "Milestone".equals(widget.getCargs()[1])) {
-                                    wndId = widget.getId();
+                            if(wndId != -1 && widget.getParent() == wndId) {
+                                if(widget.getType().equals("btn") && "Travel".equals(widget.getCargs()[1])) {
+                                    travelButtons.add(widget);
                                 }
 
-                                if(widget.getType().equals("text")) {
-                                    widgetToWatchToRemove = widget.getId();
-                                    charterWidget[0] = widget;
-                                }
-
-                                if (wndId != -1 && widget.getType().equals("btn") && widget.getParent() == wndId) {
-                                    ArrayList<PseudoWidget> buttons = session.getWidgetManager().getWidgetsByType("btn");
-                                    for (PseudoWidget btn : buttons) {
-                                        if (btn.getParent() == wndId && "Travel".equals(btn.getCargs()[1])) {
-                                            btn.WidgetMsg("activate");
+                                if(widget.getType().equals("chk")) {
+                                    session.getWidgetManager().getChatChannelByName("Area Chat").sendMessage("There are " + travelButtons.size() + " roads available.");
+                                    if(travelButtons.size() >= 1) {
+                                        int desiredIndex = 1;
+                                        if(runningArgs.containsKey("roadIndex")) {
+                                            desiredIndex = Integer.parseInt(runningArgs.get("roadIndex"));
                                         }
+                                        int index = Math.min(desiredIndex, travelButtons.size() - 1);
+                                        PseudoWidget btn = travelButtons.get(index);
+                                        session.getWidgetManager().getChatChannelByName("Area Chat").sendMessage("Traveling road " + index + ": " + btn.toString());
+                                        btn.WidgetMsg("activate");
+                                        try {
+                                            Thread.sleep(8000);
+                                        } catch (InterruptedException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                        PseudoObject player = session.getHandler().getObjectManager().getPlayer();
+                                        Coord playerCoord = player.getCoordinate().floor(posres);
+                                        mapView.mapClick(mapView.getCenter(), playerCoord, 0, 0);
+                                        session.getWidgetManager().getChatChannelByName("Area Chat").sendMessage("Clicked lmb");
                                     }
                                 }
                             }
+                        }
 
-                            @Override
-                            public void onWidgetDestroyed(int id) {
-                                if(widgetToWatchToRemove == id) {
-                                    charterWidget[0] = null;
-                                    session.getWidgetManager().removeWidgetCallback(this);
-                                }
-
+                        @Override
+                        public void onWidgetDestroyed(int id) {
+                            if(wndId == id) {
+                                charterWidget[0] = null;
+                                session.getWidgetManager().removeWidgetCallback(this);
                             }
-                        });
-                    }
-
+                        }
+                    });
                 }
             }
 

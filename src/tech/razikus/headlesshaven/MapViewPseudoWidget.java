@@ -7,8 +7,17 @@ import java.util.Arrays;
 import static haven.OCache.posres;
 
 public class MapViewPseudoWidget extends PseudoWidget{
+    private Coord sz = null;
+
     public MapViewPseudoWidget(PseudoWidget original) {
         super(original);
+    }
+
+    public Coord getCenter() {
+        if(sz == null) {
+            return new Coord(0, 0);
+        }
+        return new Coord(sz.x / 2, sz.y / 2);
     }
 
     public void mapClick(Coord pixelCord, Coord clickCoord, int button, int modifiers) {
@@ -117,7 +126,11 @@ public class MapViewPseudoWidget extends PseudoWidget{
 
     @Override
     public void ReceiveMessage(WidgetMessage message) {
-        System.out.println("MAPVIEW UNHANDLED MESSAGE: " + message);
+        if(message.getName().equals("sz")) {
+            sz = (Coord) message.getArgs()[0];
+        } else {
+            System.out.println("MAPVIEW UNHANDLED MESSAGE: " + message);
+        }
     }
 }
 
