@@ -164,6 +164,7 @@ public class ChatterProgramRespawn extends AbstractProgram{
     public void sessionHandler() {
 
         sendStateProg("STARTING");
+        final PseudoWidget[] charterWidget = {null}; // effective final hack
 
         while (!session.connectionCreated() && !this.isShouldClose()) {
             try {
@@ -192,9 +193,64 @@ public class ChatterProgramRespawn extends AbstractProgram{
             ArrayList<PseudoWidget> locwnd = session.getWidgetManager().getWidgetsByType("lbl");
             session.getWidgetManager().getChatChannelByName("Area Chat").sendMessage("1");
 
+            if(session.getWidgetManager().getMapView().isPresent()) {
+                MapViewPseudoWidget mapView = session.getWidgetManager().getMapView().get();
+                HashMap<Long, PseudoObject> objs = session.getHandler().getObjectManager().getPseudoObjectHashMapTHSafe();
+                PseudoObject milestone = null;
+                for (PseudoObject obj : objs.values()) {
+
+                    for (ResourceInformationLazyProxy prox : obj.getResourceInformationLazyProxies()) {
+                        if (prox.getResource() != null & prox.getResource().getInformation() != null) {
+                            if (prox.getResource().getInformation().getName().contains("gfx/terobjs/road/milestone-stone-e")) {
+                                milestone = obj;
+                                break;
+                            }
+                        }
+                    }
+                    if(milestone != null){
+                        System.out.println(milestone);
+                        mapView.gobClickR(milestone);
+                        session.getWidgetManager().addWidgetCallback(new PseudoWidgetCallback() {
+                            private int widgetToWatchToRemove = -1;
+                            private int wndId = -1;
+
+                            @Override
+                            public void onWidgetCreated(PseudoWidget widget) {
+                                if (widget.getType().equals("wnd") && "Milestone".equals(widget.getCargs()[1])) {
+                                    wndId = widget.getId();
+                                }
+
+                                if(widget.getType().equals("text")) {
+                                    widgetToWatchToRemove = widget.getId();
+                                    charterWidget[0] = widget;
+                                }
+
+                                if (wndId != -1 && widget.getType().equals("btn") && widget.getParent() == wndId) {
+                                    ArrayList<PseudoWidget> buttons = session.getWidgetManager().getWidgetsByType("btn");
+                                    for (PseudoWidget btn : buttons) {
+                                        if (btn.getParent() == wndId && "Travel".equals(btn.getCargs()[1])) {
+                                            btn.WidgetMsg("activate");
+                                        }
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onWidgetDestroyed(int id) {
+                                if(widgetToWatchToRemove == id) {
+                                    charterWidget[0] = null;
+                                    session.getWidgetManager().removeWidgetCallback(this);
+                                }
+
+                            }
+                        });
+                    }
+
+                }
+            }
 
             try {
-                Thread.sleep(1000);
+                Thread.sleep(5000);
             } catch (InterruptedException e) {
                 this.setShouldClose(true);
             }
