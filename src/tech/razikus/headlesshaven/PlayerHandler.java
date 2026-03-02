@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class PlayerHandler implements Connection.Callback, Runnable {
 
     private Connection connection;
+    private String username;
     private PseudoWidgetManager widgetManager;
     private ResourceManager resourceManager;
     private ObjectManager objectManager;
@@ -35,8 +36,9 @@ public class PlayerHandler implements Connection.Callback, Runnable {
 
     private long started;
 
-    public PlayerHandler(Connection connection) {
+    public PlayerHandler(Connection connection, String username) {
         this.connection = connection;
+        this.username = username;
         this.resourceManager = new ResourceManager();
         this.mapCache =  new SimpleMapCache(resourceManager, this);
         this.pseudoGlobManager = new PseudoGlobManager(resourceManager);
@@ -178,7 +180,7 @@ public class PlayerHandler implements Connection.Callback, Runnable {
     public void closed() {
         DateFormat format = new SimpleDateFormat( "hh:mm" );
         String str = format.format( currentDate );
-        System.out.println("[" + str + "]CONNECTION IS CLOSED (" + connection.username + ")");
+        System.out.println("[" + str + "]CONNECTION IS CLOSED (" + username + ")");
         connClosed = true;
 //        Connection.Callback.super.closed();
     }
