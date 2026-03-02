@@ -3,6 +3,7 @@ package tech.razikus.headlesshaven.bot;
 import tech.razikus.headlesshaven.*;
 import tech.razikus.headlesshaven.bot.automation.AutoLoginCharCallback;
 import tech.razikus.headlesshaven.bot.automation.BrodcastingChatCallback;
+import tech.razikus.headlesshaven.bot.automation.OnCharLoggedInWaiter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -59,7 +60,8 @@ public class ChatterProgramRespawn extends AbstractProgram{
                 setShouldClose(true);
                 return;
             }
-            session.addWidgetCallback(new AutoLoginCharCallback(altname, session));
+            OnCharLoggedInWaiter waiter = new OnCharLoggedInWaiter();
+            session.addWidgetCallback(new AutoLoginCharCallback(altname, session, waiter));
 
             Thread sessionThread = new Thread(session);
             sessionThread.start();
@@ -126,7 +128,7 @@ public class ChatterProgramRespawn extends AbstractProgram{
 ////                        isBanned.set(true);
 ////                    }
 ////                });
-////                c.sendMessage("ВАМ БАН");
+////                c.sendMessage("banned");
 ////                try {
 ////                    Thread.sleep(5000);
 ////                } catch (InterruptedException e) {
