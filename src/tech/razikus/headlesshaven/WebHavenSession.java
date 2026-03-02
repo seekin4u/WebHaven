@@ -175,7 +175,7 @@ public class WebHavenSession implements Runnable {
         System.out.println("CONNECTING OR RECONNECTING INTO HAVEN....");
         try {
             this.connection = new Connection(new InetSocketAddress(host, mainPort));
-            this.handler = new PlayerHandler(connection);
+            this.handler = new PlayerHandler(connection, username);
             if(this.initialChatCallbacks != null && !this.initialChatCallbacks.isEmpty()) {
                 for (ChatCallback cb: this.initialChatCallbacks) {
                     this.addChatCallback(cb);

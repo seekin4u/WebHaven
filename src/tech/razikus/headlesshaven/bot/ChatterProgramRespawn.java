@@ -3,11 +3,13 @@ package tech.razikus.headlesshaven.bot;
 import tech.razikus.headlesshaven.*;
 import tech.razikus.headlesshaven.bot.automation.AutoLoginCharCallback;
 import tech.razikus.headlesshaven.bot.automation.BrodcastingChatCallback;
+import tech.razikus.headlesshaven.bot.automation.DiscordWebhook;
 import tech.razikus.headlesshaven.bot.automation.OnCharLoggedInWaiter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -66,25 +68,25 @@ public class ChatterProgramRespawn extends AbstractProgram{
             Thread sessionThread = new Thread(session);
             sessionThread.start();
 
-            this.session = session;
+
+            WebHavenSession sessionWaited = waiter.waitForSession();
+            if(sessionWaited.isSessionTeleported()) {
+                sessionThread.interrupt();
+                sessionThread = new Thread(sessionWaited);
+                sessionThread.start();
+            }
+
+            this.session = sessionWaited;
             Thread programThread = new Thread(this::sessionHandler);
             programThread.start();
 
             this.getManager().getSessions().put(sessName, session);
-
             try {
                 programThread.join();
             } catch (InterruptedException e) {
                 this.setShouldClose(true);
             }
 
-            while (!session.connectionCreated()){
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
             while(session.getWidgetManager().getChatChannelByName("Area Chat") == null){
                 try {
                     Thread.sleep(300);
@@ -172,21 +174,62 @@ public class ChatterProgramRespawn extends AbstractProgram{
             System.out.println("WAITING FOR CONNECTION... ");
         }
 
-        ArrayList<String> list = session.getWidgetManager().getChatChannels();
-        ArrayList<PseudoWidget> locwnd = session.getWidgetManager().getWidgetsByType("lbl");
-        while(session.getWidgetManager().getChatChannelByName("Area Chat") == null){
+        int counter = 0;
+        System.out.println("WAITING FOR RESOURCES TO LOAD... ");
+        int initialSecondsToLoadResources = 5;
+        while (counter < initialSecondsToLoadResources && !this.isShouldClose()) {
             try {
-                Thread.sleep(300);
-                locwnd = session.getWidgetManager().getWidgetsByType("lbl");
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                this.setShouldClose(true);
+            }
+            counter++;
+        }
+
+        while ((session.isAlive() && !this.isShouldClose())) {
+            this.getManager().brodcastFromProgram(this.getProgname(), new CommandTypeWrapper(
+                "state",
+                "SEARCHING"
+            ));
+
+
+            ArrayList<String> list = session.getWidgetManager().getChatChannels();
+            ArrayList<PseudoWidget> locwnd = session.getWidgetManager().getWidgetsByType("lbl");
+
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                this.setShouldClose(true);
             }
         }
-        list = session.getWidgetManager().getChatChannels();
-        while(session.getWidgetManager().getChatChannelByName("Area Chat") == null){
-        try {
-          Thread.sleep(300);
-          locwnd = session.getWidgetManager().getWidgetsByType("lbl");
+
+//        while(session.getWidgetManager().getChatChannelByName("Area Chat") == null){
+//            try {
+//                Thread.sleep(300);
+//                locwnd = session.getWidgetManager().getWidgetsByType("lbl");
+//                if(!locwnd.isEmpty()){
+//                    Object text = "The position where you last logged out is not available, because that location is claimed. Would you like to restart at your hearth fire instead?";
+//                    for(PseudoWidget w : locwnd){
+//                        if(w.getCargs()[0].equals(text)){
+//                            PseudoWidget yesBtn = session.getWidgetManager().getWidgetButtonByLbl("Yes");
+//                            if(yesBtn != null){
+//                                yesBtn.WidgetMsg("activate");
+//                                System.out.println("Clicked YES in CHANGE POSITION window");
+//                            }
+//                        }
+//                    }
+//                }
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
+
+//        list = session.getWidgetManager().getChatChannels();
+//        while(session.getWidgetManager().getChatChannelByName("Area Chat") == null){
+//        try {
+//          Thread.sleep(300);
+//          locwnd = session.getWidgetManager().getWidgetsByType("lbl");
 //          if(!locwnd.isEmpty()){
 //            Object text = "The position where you last logged out is not available, because that location is claimed. Would you like to restart at your hearth fire instead?";
 //            for(PseudoWidget w : locwnd){
@@ -199,29 +242,10 @@ public class ChatterProgramRespawn extends AbstractProgram{
 //              }
 //            }
 //          }
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
-
-//        while (session.isAlive() && !this.isShouldClose()) {
-//            WebHavenState state = null; // Get state from queue
-//            try {
-//
-//                state = session.getLastState();
-//            } catch (InterruptedException e) {
-//                this.setShouldClose(true);
-//            }
-//            if(!this.isShouldClose()) {
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    this.setShouldClose(true);
-//                }
-//
-//                this.getManager().broadcastState(sessName, getProgramInformation(), state);
-//            }
+//        } catch (InterruptedException e) {
+//          throw new RuntimeException(e);
 //        }
+        //}
     }
 
     @Override
