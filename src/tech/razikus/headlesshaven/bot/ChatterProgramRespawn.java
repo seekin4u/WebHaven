@@ -187,14 +187,10 @@ public class ChatterProgramRespawn extends AbstractProgram{
         }
 
         while ((session.isAlive() && !this.isShouldClose())) {
-            this.getManager().brodcastFromProgram(this.getProgname(), new CommandTypeWrapper(
-                "state",
-                "SEARCHING"
-            ));
-
 
             ArrayList<String> list = session.getWidgetManager().getChatChannels();
             ArrayList<PseudoWidget> locwnd = session.getWidgetManager().getWidgetsByType("lbl");
+            session.getWidgetManager().getChatChannelByName("Area Chat").sendMessage("1");
 
 
             try {
